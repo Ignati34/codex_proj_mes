@@ -12,7 +12,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   coturn:
-    image: instrumentisto/coturn:4.6.2
+    image: instrumentisto/coturn:4.6
     container_name: bridgecall-coturn
     ports:
       - "3478:3478"
