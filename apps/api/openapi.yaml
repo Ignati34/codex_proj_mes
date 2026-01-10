@@ -1,0 +1,116 @@
+openapi: 3.0.3
+info:
+  title: BridgeCall API
+  version: 0.1.0
+servers:
+  - url: http://localhost:4000
+paths:
+  /auth/magic-link:
+    post:
+      summary: Request magic link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "200":
+          description: OK
+  /auth/verify:
+    get:
+      summary: Verify magic link token
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema: { type: string, minLength: 20 }
+      responses:
+        "302":
+          description: Redirect to dashboard
+  /sessions:
+    post:
+      summary: Create session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lang_owner, lang_guest, summary_type]
+              properties:
+                lang_owner: { type: string }
+                lang_guest: { type: string }
+                summary_type: { type: string, enum: [recruitment, legal] }
+                ttl_hours: { type: integer, minimum: 1, maximum: 168, default: 24 }
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, token, expires_at, join_url]
+                properties:
+                  id: { type: string, format: uuid }
+                  token: { type: string }
+                  expires_at: { type: string, format: date-time }
+                  join_url: { type: string, format: uri }
+  /join/{token}:
+    get:
+      summary: Guest join info by token
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string, minLength: 20 }
+      responses:
+        "200":
+          description: Join info
+  /sessions/{id}/end:
+    post:
+      summary: End session
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Ended
+  /sessions/{id}/transcript:
+    get:
+      summary: Get transcript
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Transcript
+  /sessions/{id}/summary:
+    get:
+      summary: Get summary
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Summary
+  /sessions/{id}:
+    delete:
+      summary: Delete session now
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Deleted
