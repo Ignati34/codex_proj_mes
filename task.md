@@ -7,6 +7,8 @@ Work in order. Each task must be complete and tested before moving on.
 
 ## Phase 0 — Repo scaffold (Day 1)
 
+Plan: Scaffold pnpm workspaces, create minimal web/api/shared apps, add Docker Compose for Postgres + coturn, and document one-command local run in README.
+
 ### T0.1 Create monorepo structure
 - /apps/web (Next.js TS)
 - /apps/api (Fastify TS)

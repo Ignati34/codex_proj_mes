@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bridgecall-postgres
+    environment:
+      POSTGRES_USER: bridgecall
+      POSTGRES_PASSWORD: bridgecall
+      POSTGRES_DB: bridgecall
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  coturn:
+    image: instrumentisto/coturn:4.6.2
+    container_name: bridgecall-coturn
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+      - "49160-49200:49160-49200/udp"
+    volumes:
+      - ./docker/coturn/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    command: ["-c", "/etc/coturn/turnserver.conf"]
+
+volumes:
+  postgres_data:
