@@ -1,5 +1,7 @@
 import { config as loadEnv } from "dotenv";
 import path from "node:path";
+import { registerAuthRoutes } from "./auth/routes.js";
+
 
 loadEnv({ path: path.resolve(process.cwd(), "../../.env") });
 
