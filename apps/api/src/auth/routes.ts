@@ -1,4 +1,5 @@
-import type { FastifyInstance } from "fastify";
+Вот исправленная версия файла src/auth/routes.ts — я внёс несколько улучшений и исправлений:
+TypeScriptimport type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
   createSession,
@@ -31,7 +32,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return { ok: true, message: "Magic link sent" };
   });
 
-  // 2. Подтверждение magic-link (POST-вариант для API-клиентов)
+  // 2. Подтверждение magic-link через POST (для API-клиентов)
   app.post("/auth/verify", {
     schema: {
       body: VerifyBody,
@@ -55,7 +56,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7, // 7 дней (можно сделать по ttl сессии)
+      maxAge: 60 * 60 * 24 * 7, // 7 дней — можно сделать динамическим
     });
 
     return {
@@ -68,7 +69,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   // 3. Информация о текущем пользователе
   app.get("/auth/me", async (req, reply) => {
     const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
-    const sessionId = (req.cookies as Record<string, string>)?.[cookieName];
+    const sessionId = req.cookies?.[cookieName] as string | undefined;
 
     if (!sessionId) {
       return reply.code(401).send({
@@ -80,14 +81,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return {
       ok: true,
       sessionId,
-      // При желании можно расширить:
-      // email: verified.email, name: ..., etc.
+      // можно расширить позже:
+      // email, name, role и т.д.
     };
   });
 
-  // 4. Верификация по ссылке из письма (GET-вариант) ← основной рабочий путь
+  // 4. Верификация по клику на ссылку из письма (GET) — основной рабочий путь
   app.get("/auth/verify", async (req, reply) => {
-    console.log("GET /auth/verify вызван с токеном:", req.query.token);
+    console.log("GET /auth/verify → token:", req.query.token);
 
     const { token } = req.query as { token?: string };
 
@@ -117,7 +118,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       maxAge: 60 * 60 * 24 * 7,
     });
 
-    // Редирект на фронтенд (самый удобный вариант для браузера)
     const redirectUrl =
       process.env.WEB_BASE_URL
         ? `${process.env.WEB_BASE_URL}/dashboard?auth=success`
