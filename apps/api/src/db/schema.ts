@@ -9,13 +9,23 @@ export const users = pgTable("users", {
 });
 
 // sessions
-export const sessions = pgTable("sessions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id").notNull().references(() => users.id),
-  tokenHash: text("token_hash").notNull().unique(),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: index("sessions_user_id_idx").on(t.userId),
+  })
+);
 
 // participants (минимально)
 export const participants = pgTable("participants", {
