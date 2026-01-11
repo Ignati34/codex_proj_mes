@@ -4,13 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "lint": "eslint .",
-    "db:generate": "drizzle-kit generate --config ./drizzle.config.ts",
-    "db:migrate": "drizzle-kit migrate --config ./drizzle.config.ts"
-    "typecheck": "tsc --noEmit"
+  "dev": "tsx watch src/index.ts",
+  "db:generate": "drizzle-kit generate --config ./drizzle.config.ts",
+  "db:migrate": "drizzle-kit migrate --config ./drizzle.config.ts",
+  "build": "tsc",
+  "start": "node dist/index.js",
+  "lint": "eslint .",
+  "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@bridgecall/shared": "workspace:*",
