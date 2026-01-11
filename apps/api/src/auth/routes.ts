@@ -15,62 +15,115 @@ const VerifyBody = z.object({
 });
 
 export async function registerAuthRoutes(app: FastifyInstance) {
-  // 1) request link
+  // 1. Запрос magic-link
   app.post("/auth/request-link", async (req, reply) => {
     const body = RequestLinkBody.parse(req.body);
 
     const user = await getOrCreateUserByEmail(body.email);
-    const ttl = Number(process.env.AUTH_TOKEN_TTL_MINUTES ?? 30);
 
+    const ttl = Number(process.env.AUTH_TOKEN_TTL_MINUTES ?? 30);
     const { token, session } = await createSession(user.id, ttl);
 
     const baseUrl = process.env.WEB_BASE_URL ?? "http://localhost:3000";
     const link = `${baseUrl}/auth/verify?token=${token}`;
 
+    // В продакшене лучше использовать настоящий mailer
     console.log("[magic-link]", body.email, link, "sessionId=", session.id);
 
-    return reply.send({ ok: true });
+    return { ok: true, message: "Magic link sent" };
   });
 
-  // 2) verify token
-  app.post("/auth/verify", async (req, reply) => {
-    const body = VerifyBody.parse(req.body);
+  // 2. Подтверждение magic-link (POST-вариант для API)
+  app.post("/auth/verify", {
+    schema: {
+      body: VerifyBody,
+    },
+  }, async (req, reply) => {
+    const { token } = req.body;
 
-    const verified = await verifySessionByToken(body.token);
+    const verified = await verifySessionByToken(token);
+
     if (!verified) {
-      return reply.code(401).send({ ok: false });
+      return reply
+        .code(401)
+        .send({ ok: false, error: "Invalid or expired token" });
     }
 
-    const cookieName =
-      process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
+    const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
 
     reply.setCookie(cookieName, verified.sessionId, {
       path: "/",
       httpOnly: true,
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production", // важно в продакшене
+      maxAge: 60 * 60 * 24 * 7, // 7 дней — пример, можно сделать по ttl сессии
     });
 
-    return reply.send({
+    return {
       ok: true,
       sessionId: verified.sessionId,
       email: verified.email,
-    });
+    };
   });
 
-  // 3) auth me
+  // 3. Получение информации о текущем пользователе
   app.get("/auth/me", async (req, reply) => {
-    const cookieName =
-      process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
+    const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
+    const sessionId = (req.cookies as Record<string, string>)?.[cookieName];
 
-    const sid = (req.cookies as any)?.[cookieName];
-    if (!sid) {
-      return reply.code(401).send({ ok: false });
+    if (!sessionId) {
+      return reply.code(401).send({
+        ok: false,
+        error: "Not authenticated",
+      });
     }
 
-    return reply.send({
+    // Здесь можно получить более полные данные пользователя
+    // const user = await getUserBySessionId(sessionId);
+    // if (!user) return reply.code(401).send({ ok: false, error: "Session not found" });
+
+    return {
       ok: true,
-      sessionId: sid,
+      sessionId,
+      // userId: user?.id,
+      // email: user?.email,
+      // name: user?.name,
+      // role: user?.role,
+      // ... другие поля
+    };
+  });
+
+  // Опционально: GET-вариант верификации (для клика по ссылке в письме)
+  app.get("/auth/verify", async (req, reply) => {
+    const { token } = req.query as { token?: string };
+
+    if (!token) {
+      return reply.code(400).send({ ok: false, error: "Token is required" });
+    }
+
+    const verified = await verifySessionByToken(token);
+
+    if (!verified) {
+      return reply.code(401).send({ ok: false, error: "Invalid or expired token" });
+    }
+
+    const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
+
+    reply.setCookie(cookieName, verified.sessionId, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7,
     });
+
+    // Для браузера удобнее редирект
+    return reply.redirect(
+      `${process.env.WEB_BASE_URL ?? "http://localhost:3000"}/dashboard?auth=success`
+    );
+
+    // Альтернатива: если нужен JSON-ответ (например для мобильного приложения)
+    // return { ok: true, message: "Authentication successful" };
   });
 }
 
