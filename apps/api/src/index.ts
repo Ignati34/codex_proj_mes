@@ -24,6 +24,7 @@ await app.register(cookie, {
 });
 
 // Регистрируем все маршруты АУТЕНТИФИКАЦИИ ДО запуска сервера!
+
 await registerAuthRoutes(app);
 
 // Дополнительные простые маршруты
@@ -60,6 +61,7 @@ const start = async () => {
   await checkDatabaseConnection();
 
   try {
+    await registerAuthRoutes(app);
     await app.listen({ port, host: "127.0.0.1" });
 
     console.log(`Server listening at http://127.0.0.1:${port}`);
