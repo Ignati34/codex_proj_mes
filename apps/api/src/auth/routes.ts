@@ -41,7 +41,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.code(401).send({ ok: false });
     }
 
-    // cookie (если уже подключил @fastify/cookie)
     const cookieName =
       process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
 
@@ -58,7 +57,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     });
   });
 
-  // 3) auth me  👈 ВОТ ЭТО
+  // 3) auth me
   app.get("/auth/me", async (req, reply) => {
     const cookieName =
       process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
