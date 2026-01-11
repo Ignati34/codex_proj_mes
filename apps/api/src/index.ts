@@ -52,6 +52,13 @@ const start = async () => {
 
   try {
     await app.listen({ port, host: "127.0.0.1" });
+
+    // ← Добавляем сюда ↓ (сразу после listen)
+    console.log(app.printRoutes(true));            // ← выводит все маршруты красиво
+
+    // Опционально, для удобства:
+    console.log("\nСервер запущен. Все доступные маршруты показаны выше ↑");
+
   } catch (err) {
     app.log.error(err);
     process.exit(1);
