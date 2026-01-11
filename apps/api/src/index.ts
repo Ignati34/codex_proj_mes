@@ -1,4 +1,8 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+import path from "node:path";
+
+loadEnv({ path: path.resolve(process.cwd(), "../../.env") });
+
 import Fastify from "fastify";
 import pg from "pg";
 const { Pool } = pg;
@@ -11,7 +15,7 @@ const databaseUrl = process.env.DATABASE_URL ?? "";
 const app = Fastify({
   logger: true
 });
-
+await registerAuthRoutes(app);
 app.get("/health", async () => ({ status: "ok" }));
 
 app.get("/", async () => ({
