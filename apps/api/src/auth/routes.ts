@@ -27,13 +27,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const baseUrl = process.env.WEB_BASE_URL ?? "http://localhost:3000";
     const link = `${baseUrl}/auth/verify?token=${token}`;
 
-    // В продакшене лучше использовать настоящий mailer
     console.log("[magic-link]", body.email, link, "sessionId=", session.id);
 
     return { ok: true, message: "Magic link sent" };
   });
 
-  // 2. Подтверждение magic-link (POST-вариант для API)
+  // 2. Подтверждение magic-link (POST-вариант)
   app.post("/auth/verify", {
     schema: {
       body: VerifyBody,
@@ -44,67 +43,10 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const verified = await verifySessionByToken(token);
 
     if (!verified) {
-      return reply
-        .code(401)
-        .send({ ok: false, error: "Invalid or expired token" });
-    }
-
-    const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
-
-    reply.setCookie(cookieName, verified.sessionId, {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production", // важно в продакшене
-      maxAge: 60 * 60 * 24 * 7, // 7 дней — пример, можно сделать по ttl сессии
-    });
-
-    return {
-      ok: true,
-      sessionId: verified.sessionId,
-      email: verified.email,
-    };
-  });
-
-  // 3. Получение информации о текущем пользователе
-  app.get("/auth/me", async (req, reply) => {
-    const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
-    const sessionId = (req.cookies as Record<string, string>)?.[cookieName];
-
-    if (!sessionId) {
       return reply.code(401).send({
         ok: false,
-        error: "Not authenticated",
+        error: "Invalid or expired token",
       });
-    }
-
-    // Здесь можно получить более полные данные пользователя
-    // const user = await getUserBySessionId(sessionId);
-    // if (!user) return reply.code(401).send({ ok: false, error: "Session not found" });
-
-    return {
-      ok: true,
-      sessionId,
-      // userId: user?.id,
-      // email: user?.email,
-      // name: user?.name,
-      // role: user?.role,
-      // ... другие поля
-    };
-  });
-
-  // Опционально: GET-вариант верификации (для клика по ссылке в письме)
-  app.get("/auth/verify", async (req, reply) => {
-    const { token } = req.query as { token?: string };
-
-    if (!token) {
-      return reply.code(400).send({ ok: false, error: "Token is required" });
-    }
-
-    const verified = await verifySessionByToken(token);
-
-    if (!verified) {
-      return reply.code(401).send({ ok: false, error: "Invalid or expired token" });
     }
 
     const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
@@ -117,13 +59,68 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       maxAge: 60 * 60 * 24 * 7,
     });
 
-    // Для браузера удобнее редирект
-    return reply.redirect(
-      `${process.env.WEB_BASE_URL ?? "http://localhost:3000"}/dashboard?auth=success`
-    );
+    return {
+      ok: true,
+      sessionId: verified.sessionId,
+      email: verified.email,
+    };
+  });
 
-    // Альтернатива: если нужен JSON-ответ (например для мобильного приложения)
-    // return { ok: true, message: "Authentication successful" };
+  // 3. Информация о текущем пользователе
+  app.get("/auth/me", async (req, reply) => {
+    const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
+    const sessionId = (req.cookies as Record<string, string>)?.[cookieName];
+
+    if (!sessionId) {
+      return reply.code(401).send({
+        ok: false,
+        error: "Not authenticated",
+      });
+    }
+
+    return {
+      ok: true,
+      sessionId,
+    };
+  });
+
+  // 4. Верификация по ссылке из письма (GET-вариант)
+  app.get("/auth/verify", async (req, reply) => {
+    console.log("GET /auth/verify вызван с токеном:", (req.query as any).token);  // ← ЭТА СТРОКА УЖЕ ДОБАВЛЕНА!
+
+    const { token } = req.query as { token?: string };
+
+    if (!token || typeof token !== "string") {
+      return reply.code(400).send({
+        ok: false,
+        error: "Token is required in query parameter",
+      });
+    }
+
+    const verified = await verifySessionByToken(token);
+
+    if (!verified) {
+      return reply.code(401).send({
+        ok: false,
+        error: "Invalid or expired token",
+      });
+    }
+
+    const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
+
+    reply.setCookie(cookieName, verified.sessionId, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    const redirectUrl =
+      process.env.WEB_BASE_URL
+        ? `${process.env.WEB_BASE_URL}/dashboard?auth=success`
+        : "http://localhost:3000/dashboard?auth=success";
+
+    return reply.redirect(redirectUrl);
   });
 }
-
