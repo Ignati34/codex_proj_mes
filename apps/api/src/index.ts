@@ -18,6 +18,9 @@ const databaseUrl = process.env.DATABASE_URL ?? "";
 const app = Fastify({
   logger: true
 });
+await app.register(cookie, {
+  secret: process.env.SESSION_COOKIE_SECRET,
+});
 await registerAuthRoutes(app);
 app.get("/health", async () => ({ status: "ok" }));
 
