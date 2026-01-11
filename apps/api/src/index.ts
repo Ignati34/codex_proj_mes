@@ -1,6 +1,7 @@
 import { config as loadEnv } from "dotenv";
 import path from "node:path";
 import { registerAuthRoutes } from "./auth/routes.js";
+import cookie from "@fastify/cookie";
 
 
 loadEnv({ path: path.resolve(process.cwd(), "../../.env") });
