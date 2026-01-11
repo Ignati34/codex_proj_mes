@@ -1,6 +1,7 @@
 import "dotenv/config";
 import Fastify from "fastify";
-import { Pool } from "pg";
+import pg from "pg";
+const { Pool } = pg;
 import { APP_NAME } from "@bridgecall/shared";
 
 const port = Number(process.env.PORT ?? 4000);
