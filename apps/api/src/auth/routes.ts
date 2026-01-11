@@ -32,6 +32,13 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const verified = await verifySessionByToken(body.token);
     if (!verified) return reply.code(401).send({ ok: false });
 
+    const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
+    reply.setCookie(cookieName, verified.sessionId, {
+     path: "/",
+     httpOnly: true,
+     sameSite: "lax",
+});
+
     return reply.send({
       ok: true,
       sessionId: verified.sessionId,
