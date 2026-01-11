@@ -9,7 +9,7 @@ import { registerAuthRoutes } from "./auth/routes.js";
 
 const { Pool } = pg;
 
-// Загружаем .env (из корня проекта, на два уровня вверх)
+// Загружаем .env
 loadEnv({ path: path.resolve(process.cwd(), "../../.env") });
 
 const port = Number(process.env.PORT ?? 4001);
@@ -18,16 +18,15 @@ const app = Fastify({
   logger: true,
 });
 
-// Подключаем плагин cookie (нужен для setCookie/getCookie)
+// Подключаем cookie-плагин
 await app.register(cookie, {
   secret: process.env.SESSION_COOKIE_SECRET,
 });
 
-// Регистрируем все маршруты АУТЕНТИФИКАЦИИ ДО запуска сервера!
-
+// ← Самое важное: регистрируем все роуты ДО запуска сервера!
 await registerAuthRoutes(app);
 
-// Дополнительные простые маршруты
+// Дополнительные простые роуты
 app.get("/health", async () => ({ status: "ok" }));
 
 app.get("/", async () => ({
@@ -35,7 +34,7 @@ app.get("/", async () => ({
   status: "api-ready",
 }));
 
-// Проверка подключения к базе (можно вызвать перед listen)
+// Проверка подключения к базе
 async function checkDatabaseConnection() {
   const databaseUrl = process.env.DATABASE_URL ?? "";
 
@@ -61,12 +60,11 @@ const start = async () => {
   await checkDatabaseConnection();
 
   try {
-    await registerAuthRoutes(app);
     await app.listen({ port, host: "127.0.0.1" });
 
     console.log(`Server listening at http://127.0.0.1:${port}`);
 
-    // Вывод всех зарегистрированных маршрутов — очень полезно!
+    // Вывод всех зарегистрированных маршрутов (для отладки)
     console.log("\n=== Зарегистрированные маршруты ===\n");
     console.log(app.printRoutes(true));
     console.log("\n==================================\n");
