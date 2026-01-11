@@ -3,6 +3,7 @@ import Fastify from "fastify";
 import pg from "pg";
 const { Pool } = pg;
 import { APP_NAME } from "@bridgecall/shared";
+import { registerAuthRoutes } from "./auth/routes.js";
 
 const port = Number(process.env.PORT ?? 4000);
 const databaseUrl = process.env.DATABASE_URL ?? "";
