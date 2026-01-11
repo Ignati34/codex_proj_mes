@@ -52,7 +52,23 @@ const start = async () => {
 
   try {
     await app.listen({ port, host: "127.0.0.1" });
+  const start = async () => {
+  await checkDatabaseConnection();
+  try {
+    await app.listen({ port, host: "127.0.0.1" });
 
+    // ← Добавь эти 3 строки
+    app.get("/super-simple-test", async () => {
+      return { message: "Если ты видишь это — Fastify работает и роуты можно регистрировать" };
+    });
+
+    console.log("Добавлен тестовый маршрут /super-simple-test");
+
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
+};
     // ← Добавляем сюда ↓ (сразу после listen)
     console.log(app.printRoutes(true));            // ← выводит все маршруты красиво
 
