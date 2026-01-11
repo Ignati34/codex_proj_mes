@@ -18,7 +18,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   // 1. Запрос magic-link
   app.post("/auth/request-link", async (req, reply) => {
     const body = RequestLinkBody.parse(req.body);
-
     const user = await getOrCreateUserByEmail(body.email);
 
     const ttl = Number(process.env.AUTH_TOKEN_TTL_MINUTES ?? 30);
@@ -32,7 +31,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return { ok: true, message: "Magic link sent" };
   });
 
-  // 2. Подтверждение magic-link (POST-вариант)
+  // 2. Подтверждение magic-link (POST-вариант для API-клиентов)
   app.post("/auth/verify", {
     schema: {
       body: VerifyBody,
@@ -56,7 +55,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24 * 7, // 7 дней (можно сделать по ttl сессии)
     });
 
     return {
@@ -81,12 +80,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return {
       ok: true,
       sessionId,
+      // При желании можно расширить:
+      // email: verified.email, name: ..., etc.
     };
   });
 
-  // 4. Верификация по ссылке из письма (GET-вариант)
+  // 4. Верификация по ссылке из письма (GET-вариант) ← основной рабочий путь
   app.get("/auth/verify", async (req, reply) => {
-    console.log("GET /auth/verify вызван с токеном:", (req.query as any).token);  // ← ЭТА СТРОКА УЖЕ ДОБАВЛЕНА!
+    console.log("GET /auth/verify вызван с токеном:", req.query.token);
 
     const { token } = req.query as { token?: string };
 
@@ -116,6 +117,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       maxAge: 60 * 60 * 24 * 7,
     });
 
+    // Редирект на фронтенд (самый удобный вариант для браузера)
     const redirectUrl =
       process.env.WEB_BASE_URL
         ? `${process.env.WEB_BASE_URL}/dashboard?auth=success`
