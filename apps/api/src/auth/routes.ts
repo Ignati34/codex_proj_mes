@@ -1,4 +1,3 @@
-Вот исправленная версия файла src/auth/routes.ts — я внёс несколько улучшений и исправлений:
 TypeScriptimport type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
