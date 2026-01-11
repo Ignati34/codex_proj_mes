@@ -1,4 +1,3 @@
-import { pgTable, text, timestamp, uuid, jsonb, integer } from "drizzle-orm/pg-core";
 import { pgTable, text, timestamp, uuid, jsonb, integer, index } from "drizzle-orm/pg-core";
 
 // users
@@ -51,11 +50,19 @@ export const summaries = pgTable("summaries", {
 });
 
 // usage_events
-export const usageEvents = pgTable("usage_events", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id").references(() => users.id),
-  kind: text("kind").notNull(),
-  qty: integer("qty").notNull().default(0),
-  meta: jsonb("meta").notNull().default({}),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const usageEvents = pgTable(
+  "usage_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id),
+    kind: text("kind").notNull(),
+    qty: integer("qty").notNull().default(0),
+    meta: jsonb("meta").notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    userIdIdx: index("usage_events_user_id_idx").on(t.userId),
+  })
+);
