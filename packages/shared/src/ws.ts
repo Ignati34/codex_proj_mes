@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TranscriptSegmentSchema, SpeakerSchema, LangSchema } from "./schemas";
+import { TranscriptSegmentSchema, SpeakerSchema, LangSchema } from "./schemas.js";
 
 /**
  * Signaling messages (WebRTC)
