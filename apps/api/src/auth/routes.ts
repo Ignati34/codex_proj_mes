@@ -108,20 +108,19 @@ export async function registerAuthRoutes(app: FastifyInstance) {
    * 4. Current user session
    * ------------------------------------------------- */
   app.get("/auth/me", async (req, reply) => {
-    const cookieName =
-      process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
-    const sessionId = (req.cookies as any)?.[cookieName] as string | undefined;
-
-    if (!sessionId) {
-      return reply.code(401).send({
-        ok: false,
-        error: "Not authenticated",
-      });
-    }
-
-    return reply.send({
-      ok: true,
-      sessionId,
+  const s = await requireSession(req);
+  if (!s) {
+    return reply.code(401).send({
+      ok: false,
+      error: "Not authenticated",
+    });
+  }
+  return reply.send({
+    ok: true,
+    sessionId: s.sessionId,
+    userId: s.userId,
+    email: s.email,
+    expiresAt: s.expiresAt,
     });
   });
 }
