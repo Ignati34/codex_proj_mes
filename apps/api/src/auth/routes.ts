@@ -31,7 +31,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return { ok: true, message: "Magic link sent" };
   });
 
-  // 2. Подтверждение magic-link через POST
+  // 2. Подтверждение magic-link через POST (для API-клиентов)
   app.post("/auth/verify", {
     schema: {
       body: VerifyBody,
@@ -83,9 +83,34 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     };
   });
 
-  // 4. Верификация GET — временный тестовый вариант (удалить старый код!)
+  // 4. Верификация по клику на ссылку из письма (GET-вариант)
   app.get("/auth/verify", async (req, reply) => {
-    console.log("GET /auth/verify вызван! Токен:", req.query.token);
-    return { debug: "GET /auth/verify работает!" };
+    const token = (req.query as any)?.token as string | undefined;
+
+    if (!token) {
+      return reply.code(400).send({ ok: false, error: "token required" });
+    }
+
+    const verified = await verifySessionByToken(token);
+
+    if (!verified) {
+      return reply.code(401).send({ ok: false, error: "invalid or expired token" });
+    }
+
+    const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
+
+    reply.setCookie(cookieName, verified.sessionId, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return reply.send({
+      ok: true,
+      sessionId: verified.sessionId,
+      email: verified.email,
+    });
   });
 }
