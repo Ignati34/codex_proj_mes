@@ -86,8 +86,12 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   });
 
   // 4. Верификация по клику на ссылку из письма (GET) — основной рабочий путь
+  // 4. Верификация GET — временный минимальный вариант
+  
   app.get("/auth/verify", async (req, reply) => {
-    console.log("GET /auth/verify → token:", req.query.token);
+  console.log("GET /auth/verify вызван! Токен:", req.query.token);
+  return { debug: "GET /auth/verify работает!" };
+});
 
     const { token } = req.query as { token?: string };
 
