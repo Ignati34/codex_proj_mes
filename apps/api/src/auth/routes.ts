@@ -84,6 +84,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   });
 
   // 4. Верификация по клику на ссылку из письма (GET-вариант)
+    // 4. Верификация по ссылке из письма (GET-вариант) — полноценный рабочий роут
   app.get("/auth/verify", async (req, reply) => {
     const token = (req.query as any)?.token as string | undefined;
 
@@ -104,7 +105,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7,
     });
 
     return reply.send({
