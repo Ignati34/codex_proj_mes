@@ -60,6 +60,10 @@ const start = async () => {
   await checkDatabaseConnection();
 
   try {
+    console.log("registerAuthRoutes вызывается...");
+    await registerAuthRoutes(app);
+    console.log("registerAuthRoutes завершён");
+    
     await app.listen({ port, host: "127.0.0.1" });
 
     console.log(`Server listening at http://127.0.0.1:${port}`);
