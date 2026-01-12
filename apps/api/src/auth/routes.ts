@@ -31,7 +31,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return { ok: true, message: "Magic link sent" };
   });
 
-  // 2. Подтверждение magic-link через POST (для API-клиентов)
+  // 2. Подтверждение magic-link через POST
   app.post("/auth/verify", {
     schema: {
       body: VerifyBody,
@@ -83,7 +83,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     };
   });
 
-  // 4. Верификация GET — временный минимальный вариант (для теста)
+  // 4. Верификация GET — временный тестовый вариант (удалить старый код!)
   app.get("/auth/verify", async (req, reply) => {
     console.log("GET /auth/verify вызван! Токен:", req.query.token);
     return { debug: "GET /auth/verify работает!" };
