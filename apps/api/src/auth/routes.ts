@@ -88,37 +88,32 @@ export async function registerAuthRoutes(app: FastifyInstance) {
    * 3. Verify token (GET) — клик по magic-link
    * ------------------------------------------------- */
   app.get("/auth/verify", async (req, reply) => {
-    const token = (req.query as any)?.token as string | undefined;
+  const token = req.query.token as string | undefined;
 
-    if (!token) {
-      return reply.code(400).send({
-        ok: false,
-        error: "token required",
-      });
-    }
+  if (!token) {
+    return reply.code(400).send({ ok: false, error: "token required" });
+  }
 
-    const verified = await verifySessionByToken(token);
-    if (!verified) {
-      return reply.code(401).send({
-        ok: false,
-        error: "Invalid or expired token",
-      });
-    }
+  const verified = await verifySessionByToken(token);
 
-    const cookieName =
-      process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
+  if (!verified) {
+    return reply.code(401).send({ ok: false, error: "invalid or expired token" });
+  }
 
-    reply.setCookie(cookieName, verified.sessionId, {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-    });
+  const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
 
-    return reply.send({
-      ok: true,
-      sessionId: verified.sessionId,
-      email: verified.email,
+  reply.setCookie(cookieName, verified.sessionId, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24 * 7,
+  });
+
+  return reply.send({
+    ok: true,
+    sessionId: verified.sessionId,
+    email: verified.email,
     });
   });
 
