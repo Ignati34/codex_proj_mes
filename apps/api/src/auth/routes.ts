@@ -31,7 +31,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return { ok: true, message: "Magic link sent" };
   });
 
-  // 2. Подтверждение magic-link через POST (для API)
+  // 2. Подтверждение magic-link через POST (для API-клиентов)
   app.post("/auth/verify", {
     schema: {
       body: VerifyBody,
@@ -88,46 +88,4 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     console.log("GET /auth/verify вызван! Токен:", req.query.token);
     return { debug: "GET /auth/verify работает!" };
   });
-
-  // ← Полная версия верификации (раскомментируй, когда временная заработает)
-  /*
-  app.get("/auth/verify", async (req, reply) => {
-    console.log("GET /auth/verify вызван с токеном:", req.query.token);
-
-    const { token } = req.query as { token?: string };
-
-    if (!token || typeof token !== "string") {
-      return reply.code(400).send({
-        ok: false,
-        error: "Token is required in query parameter",
-      });
-    }
-
-    const verified = await verifySessionByToken(token);
-
-    if (!verified) {
-      return reply.code(401).send({
-        ok: false,
-        error: "Invalid or expired token",
-      });
-    }
-
-    const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
-
-    reply.setCookie(cookieName, verified.sessionId, {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
-    const redirectUrl =
-      process.env.WEB_BASE_URL
-        ? `${process.env.WEB_BASE_URL}/dashboard?auth=success`
-        : "http://localhost:3000/dashboard?auth=success";
-
-    return reply.redirect(redirectUrl);
-  });
-  */
 }
