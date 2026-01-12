@@ -1,4 +1,4 @@
-TypeScriptimport type { FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import {
   createSession,
@@ -31,7 +31,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return { ok: true, message: "Magic link sent" };
   });
 
-  // 2. Подтверждение magic-link через POST (для API-клиентов)
+  // 2. Подтверждение magic-link через POST (для API)
   app.post("/auth/verify", {
     schema: {
       body: VerifyBody,
@@ -55,7 +55,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7, // 7 дней — можно сделать динамическим
+      maxAge: 60 * 60 * 24 * 7,
     });
 
     return {
@@ -80,18 +80,19 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     return {
       ok: true,
       sessionId,
-      // можно расширить позже:
-      // email, name, role и т.д.
     };
   });
 
-  // 4. Верификация по клику на ссылку из письма (GET) — основной рабочий путь
-  // 4. Верификация GET — временный минимальный вариант
-  
+  // 4. Верификация GET — временный минимальный вариант (для теста)
   app.get("/auth/verify", async (req, reply) => {
-   console.log("GET /auth/verify вызван! Токен:", req.query.token);
-   return { debug: "GET /auth/verify работает!" };
-});
+    console.log("GET /auth/verify вызван! Токен:", req.query.token);
+    return { debug: "GET /auth/verify работает!" };
+  });
+
+  // ← Полная версия верификации (раскомментируй, когда временная заработает)
+  /*
+  app.get("/auth/verify", async (req, reply) => {
+    console.log("GET /auth/verify вызван с токеном:", req.query.token);
 
     const { token } = req.query as { token?: string };
 
@@ -128,4 +129,5 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     return reply.redirect(redirectUrl);
   });
+  */
 }
