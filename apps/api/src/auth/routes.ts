@@ -6,10 +6,6 @@ import {
   verifySessionByToken,
 } from "./sessionRepo.js";
 
-/* =======================
-   Schemas
-======================= */
-
 const RequestLinkBody = z.object({
   email: z.string().email(),
 });
@@ -18,28 +14,19 @@ const VerifyBody = z.object({
   token: z.string().min(10),
 });
 
-/* =======================
-   Routes
-======================= */
-
 export async function registerAuthRoutes(app: FastifyInstance) {
   /* -------------------------------------------------
    * 1. Request magic link
    * ------------------------------------------------- */
   app.post("/auth/request-link", async (req, reply) => {
     const body = RequestLinkBody.parse(req.body);
-
     const user = await getOrCreateUserByEmail(body.email);
     const ttl = Number(process.env.AUTH_TOKEN_TTL_MINUTES ?? 30);
-
     const { token, session } = await createSession(user.id, ttl);
-
     const baseUrl = process.env.WEB_BASE_URL ?? "http://localhost:3000";
     const link = `${baseUrl}/auth/verify?token=${token}`;
-
     // MVP: console provider
     console.log("[magic-link]", body.email, link, "sessionId=", session.id);
-
     return reply.send({
       ok: true,
       message: "Magic link sent",
@@ -56,7 +43,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     },
     async (req, reply) => {
       const { token } = req.body;
-
       const verified = await verifySessionByToken(token);
       if (!verified) {
         return reply.code(401).send({
@@ -64,10 +50,8 @@ export async function registerAuthRoutes(app: FastifyInstance) {
           error: "Invalid or expired token",
         });
       }
-
       const cookieName =
         process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
-
       reply.setCookie(cookieName, verified.sessionId, {
         path: "/",
         httpOnly: true,
@@ -75,7 +59,6 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 60 * 24 * 7, // 7 days
       });
-
       return reply.send({
         ok: true,
         sessionId: verified.sessionId,
@@ -85,36 +68,38 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   );
 
   /* -------------------------------------------------
-   * 3. Verify token (GET) — клик по magic-link
+   * 3. Verify token (GET) — клик по magic-link (основной путь!)
    * ------------------------------------------------- */
   app.get("/auth/verify", async (req, reply) => {
-  const token = req.query.token as string | undefined;
+    const token = req.query.token as string | undefined;
 
-  if (!token) {
-    return reply.code(400).send({ ok: false, error: "token required" });
-  }
+    if (!token) {
+      return reply.code(400).send({ ok: false, error: "token required" });
+    }
 
-  const verified = await verifySessionByToken(token);
+    console.log("GET /auth/verify called with token:", token);
 
-  if (!verified) {
-    return reply.code(401).send({ ok: false, error: "invalid or expired token" });
-  }
+    const verified = await verifySessionByToken(token);
 
-  const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
+    if (!verified) {
+      return reply.code(401).send({ ok: false, error: "invalid or expired token" });
+    }
 
-  reply.setCookie(cookieName, verified.sessionId, {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7,
-  });
+    const cookieName = process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
 
-  return reply.send({
-    ok: true,
-    sessionId: verified.sessionId,
-    email: verified.email,
+    reply.setCookie(cookieName, verified.sessionId, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7,
     });
+
+    // Редирект на фронтенд (самое важное!)
+    const redirectUrl =
+      process.env.WEB_BASE_URL ?? "http://localhost:3000/dashboard?auth=success";
+
+    return reply.redirect(redirectUrl);
   });
 
   /* -------------------------------------------------
@@ -123,10 +108,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
   app.get("/auth/me", async (req, reply) => {
     const cookieName =
       process.env.SESSION_COOKIE_NAME ?? "bridgecall_session";
-
-    const sessionId = (req.cookies as any)?.[cookieName] as
-      | string
-      | undefined;
+    const sessionId = (req.cookies as any)?.[cookieName] as string | undefined;
 
     if (!sessionId) {
       return reply.code(401).send({
