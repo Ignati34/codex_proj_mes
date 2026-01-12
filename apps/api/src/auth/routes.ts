@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { requireSession } from "./requireSession.js";
+
 import {
   createSession,
   getOrCreateUserByEmail,
